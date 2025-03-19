@@ -10,6 +10,7 @@ output: html_document
 
 Load the `"nycflights13"` package.  You'll also need to load `dplyr` or `tidyverse`, if you didn't above.
 
+
 ```{r}
 library(tidyverse)
 #install.packages("nycflights13")
@@ -24,13 +25,20 @@ my_flights <- na.omit(my_flights) ## this dataset has data on cancelled flights 
 Create a dataframe of the average arrival delays for each _destination_
 
 ```{r}
+arrival_delay <- flights %>%
+  group_by(dest) %>%
+  summarise(avg_arr_delay = mean(arr_delay, na.rm = TRUE))
 
+print(head(arrival_delay))
 ```
 
 Then use `left_join()` to join on the "airports" dataframe, which has the airport information.
 
 ```{r}
+avg_airport_delay <- arrival_delay %>%
+  left_join(airports, by = c("dest" = "faa"))
 
+print(head(avg_airport_delay))
 ```
 
 
@@ -39,28 +47,37 @@ Note here: the column names don't match anymore!
 Which airport had the largest average arrival delay?
 
 ```{r}
+largest_delay <- avg_airport_delay %>%
+  slice_max(order_by = avg_arr_delay, n = 1) %>%
+  select(dest, name, avg_arr_delay)
 
+print(largest_delay)
 ```
 
 
 
-What is the average departure delay for each airline? To answer this with something more than just the FAA code of the airline name, you need to create a dataframe of the average departure delay for each _airline_, then use `left_join()` to join on the "airlines" dataframe
+What is the average departure delay for each airline? To answer this with something more than just the FAA code of the airline name, you need to create a dataframe of the average departure delay for each _airline_, then use `left_join()` to join on the "airlines" dataframe.
 
 
 ```{r}
 
+  
+  
+depart_delay <- flights %>%
+  group_by(carrier) %>%
+  summarise(depart_delay = mean(dep_delay, na.rm = TRUE)) %>%
+  arrange(desc(depart_delay))
 
-````
-
-Which airline had the smallest average departure delay? 
+print(depart_delay)
 
 
+## Which airline had the smallest average departure delay?
+smallest_delay <- head(depart_delay, 1)
 
-```{r}
-
-
-
+print(smallest_delay)
 ```
+
+
 
 
 
@@ -87,3 +104,16 @@ flights %>%
 
 What does anti_join(flights, airports, by = c("dest" = "faa")) tell you? What does anti_join(airports, flights, by = c("faa" = "dest")) tell you?
 Perform the two joins below and consider what the results are. 
+
+```{r}
+unmatched_flights <- flights %>%
+  anti_join(airports, by = c("dest" = "faa"))
+
+print(unmatched_flights)
+
+unmatched_airports <- airports %>%
+  anti_join(flights, by = c("faa" = "dest"))
+
+print(unmatched_airports)
+```
+
